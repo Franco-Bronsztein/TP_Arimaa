@@ -224,13 +224,99 @@ def puede_realizar_movimiento(j : Juego, m : Movimiento) -> bool: # Indica si el
 
 #### Ejercicio 5
 
-def activar_trampas(t : Tablero) -> Tablero:
-    raise Exception("No implementado")
+def copiarTablero(t : Tablero) -> Tablero: # Devuelve un tablero nuevo con las mismas casillas que t pero independiente de él.
+    copia : Tablero = []
+    for fila in t:
+        fila_nueva : list[Casilla] = []
+        for casilla in fila:
+            fila_nueva.append(casilla)
+        copia.append(fila_nueva)
+    return copia
+
+
+def sacarPieza(t : Tablero, pos : Posicion) -> None: # Deja vacía la casilla en pos del tablero t, sin tocar ninguna otra. Modifica el tablero t en lugar de devolver uno nuevo.
+    t[pos.fila][pos.columna] = VACIA
+
+
+def activarTrampa(t : Tablero, pos : Posicion) -> None: # Activa la casilla trampa en pos sobre t. Si la pieza de pos no tiene ninguna pieza amiga vecina, la retira. Si tiene alguna, o si la casilla está vacía, el tablero queda igual.
+    tiene_amiga_vecina : bool = hayPieza(t, pos) and hay_pieza_amiga_vecina(t, pos)
+    if not tiene_amiga_vecina:
+        sacarPieza(t, pos)
+
+
+def activarTrampas(t : Tablero) -> Tablero: # Devuelve el tablero que resulta de activar las cuatro casillas trampa sobre t, sin modificar t.
+    res : Tablero = copiarTablero(t)
+    for pos_trampa in POSICIONES_TRAMPA:
+        activarTrampa(res, pos_trampa)
+    return res
+
+
+def activar_trampas(t : Tablero) -> Tablero: # Devuelve el tablero que resulta de activar las cuatro casillas trampa sobre t.
+    return activarTrampas(t)
 
 #### Ejercicio 6
 
-def realizar_movimiento(j : Juego, m : Movimiento) -> Juego:
-    raise Exception("No implementado")
+def tableroTrasladandoPieza(t0 : Tablero, posorigen : Posicion, posdestino : Posicion) -> Tablero: # Devuelve el tablero que resulta de trasladar la pieza ubicada en posorigen a posdestino: la casilla de origen queda vacía y la de destino pasa a tener esa pieza. No modifica t0.
+    res : Tablero = copiarTablero(t0)
+    res[posdestino.fila][posdestino.columna] = casilla_en_posicion(t0, posorigen)
+    sacarPieza(res, posorigen)
+    return res
+
+
+def tableroPostMoverASecas(t0 : Tablero, pos : Posicion, d : Direccion) -> Tablero: # Devuelve el tablero que resulta de mover a secas la pieza ubicada en pos una casilla hacia d y activar luego las trampas.
+    posdestino : Posicion = posicion_vecina_hacia(pos, d)
+    tintermedio : Tablero = tableroTrasladandoPieza(t0, pos, posdestino)
+    return activar_trampas(tintermedio)
+
+
+def tableroPostArrastrar(t0 : Tablero, pos : Posicion, d : Direccion, darrastre : Direccion) -> Tablero: # Devuelve el tablero que resulta de mover la pieza en pos hacia d arrastrando a la pieza enemiga que está del lado opuesto a darrastre (la pieza arrastrada termina en pos), y de activar luego las trampas.
+    poshueco : Posicion = posicion_vecina_hacia(pos, d)
+    posenemiga : Posicion = posicion_vecina_hacia(pos, opuesta(darrastre))
+    tintermedio1 : Tablero = tableroTrasladandoPieza(t0, pos, poshueco)
+    tintermedio2 : Tablero = tableroTrasladandoPieza(tintermedio1, posenemiga, pos)
+    return activar_trampas(tintermedio2)
+
+
+def tableroPostEmpujar(t0 : Tablero, pos : Posicion, d : Direccion, dempuje : Direccion) -> Tablero: # Devuelve el tablero que resulta de mover la pieza en pos hacia d empujando a la pieza enemiga que está en esa dirección hacia dempuje (la pieza que empuja termina donde estaba la empujada), y de activar luego las trampas.
+    posenemiga : Posicion = posicion_vecina_hacia(pos, d)
+    poshueco : Posicion = posicion_vecina_hacia(posenemiga, dempuje)
+    tintermedio1 : Tablero = tableroTrasladandoPieza(t0, posenemiga, poshueco)
+    tintermedio2 : Tablero = tableroTrasladandoPieza(tintermedio1, pos, posenemiga)
+    return activar_trampas(tintermedio2)
+
+
+def tableroPostMovimiento(t0 : Tablero, m : Movimiento) -> Tablero: # Devuelve el tablero que resulta de realizar el movimiento m sobre t0 según su acción (mover a secas, arrastrar o empujar).
+    res : Tablero
+    if m.accion == MOVER_A_SECAS:
+        res = tableroPostMoverASecas(t0, m.origen, m.pasos[0])
+    elif m.accion == ARRASTRAR:
+        res = tableroPostArrastrar(t0, m.origen, m.pasos[0], m.pasos[1])
+    else:
+        res = tableroPostEmpujar(t0, m.origen, m.pasos[0], m.pasos[1])
+    return res
+
+
+def hayQueCambiarDeTurno(j : Juego, m : Movimiento) -> bool: # Indica si, al realizar el movimiento m en el juego j, el jugador agota sus pasos del turno y el turno debe pasar al oponente.
+    return j.pasos_consumidos + len(m.pasos) == MAX_PASOS
+
+
+def juegoConTurnoPosiblementeAvanzado(j0 : Juego, m : Movimiento) -> Juego: # Devuelve un juego con el mismo tablero que j0 en el que ya se contaron los pasos del movimiento m. Si se agotan los pasos del turno, el turno pasa al oponente con 0 pasos consumidos; si no, el turno se mantiene y se suman los pasos del movimiento.
+    res : Juego
+    if hayQueCambiarDeTurno(j0, m):
+        res = pasar_turno(j0)
+    else:
+        res = Juego(j0.tablero, j0.turno, j0.pasos_consumidos + len(m.pasos))
+    return res
+
+
+def juegoPostMovimiento(j0 : Juego, m : Movimiento) -> Juego: # Devuelve el juego que resulta de realizar el movimiento m en j0, con el tablero actualizado y con el turno y los pasos al día.
+    tablero_nuevo : Tablero = tableroPostMovimiento(j0.tablero, m)
+    j_con_tablero_nuevo : Juego = Juego(tablero_nuevo, j0.turno, j0.pasos_consumidos)
+    return juegoConTurnoPosiblementeAvanzado(j_con_tablero_nuevo, m)
+
+
+def realizar_movimiento(j : Juego, m : Movimiento) -> Juego: # Devuelve el juego que resulta de realizar el movimiento m en j: se mueven las piezas, se activan las trampas y se actualizan el turno y los pasos consumidos.
+    return juegoPostMovimiento(j, m)
 
 #### Ejercicio 7
 

@@ -622,6 +622,49 @@ class test_puede_realizar_movimiento(unittest.TestCase):
 
 #### Ejercicio 5
 
+def tableros_coinciden_salvo_en_la_posicion(t1 : Tablero, t2 : Tablero, pos : Posicion) -> bool:
+    coinciden : bool = True
+    for fila in range(ALTO):
+        for columna in range(ANCHO):
+            if Posicion(fila, columna) != pos and t1[fila][columna] != t2[fila][columna]:
+                coinciden = False
+    return coinciden
+
+def es_tablero_sacando_pieza(t0 : Tablero, t1 : Tablero, pos : Posicion) -> bool:
+    return (tableros_coinciden_salvo_en_la_posicion(t0, t1, pos)
+            and hay_casilla_vacia(t1, pos))
+
+def es_tablero_despues_de_activar_trampa(t0 : Tablero, t1 : Tablero, pos_trampa : Posicion) -> bool:
+    tiene_amiga_vecina : bool = hayPieza(t0, pos_trampa) and hay_pieza_amiga_vecina(t0, pos_trampa)
+    primera_implicacion : bool = (not tiene_amiga_vecina) or t1 == t0
+    segunda_implicacion : bool = tiene_amiga_vecina or es_tablero_sacando_pieza(t0, t1, pos_trampa)
+    return primera_implicacion and segunda_implicacion
+
+def es_tablero_despues_de_activar_todas_las_trampas(t0 : Tablero, t1 : Tablero) -> bool:
+    t_intermedio1 : Tablero = copiarTablero(t0)
+    activarTrampa(t_intermedio1, POSICIONES_TRAMPA[0])
+    t_intermedio2 : Tablero = copiarTablero(t_intermedio1)
+    activarTrampa(t_intermedio2, POSICIONES_TRAMPA[1])
+    t_intermedio3 : Tablero = copiarTablero(t_intermedio2)
+    activarTrampa(t_intermedio3, POSICIONES_TRAMPA[2])
+    return (es_tablero_despues_de_activar_trampa(t0, t_intermedio1, POSICIONES_TRAMPA[0])
+            and es_tablero_despues_de_activar_trampa(t_intermedio1, t_intermedio2, POSICIONES_TRAMPA[1])
+            and es_tablero_despues_de_activar_trampa(t_intermedio2, t_intermedio3, POSICIONES_TRAMPA[2])
+            and es_tablero_despues_de_activar_trampa(t_intermedio3, t1, POSICIONES_TRAMPA[3]))
+
+def tablero_con_trampas_ocupadas():
+    return leer_tablero([
+              '--------', #7
+              '--------', #6
+              '--r-----', #5
+              '--r-----', #4
+              '--------', #3
+              '----rE--', #2
+              '--------', #1
+              'R-------', #0
+              #01234567
+            ])
+
 class test_activar_trampas(unittest.TestCase):
 
     def test_activar_trampas_ok(self):
@@ -651,7 +694,69 @@ class test_activar_trampas(unittest.TestCase):
         self.assertNotEqual(t0, t1)
         self.assertEqual(t2, t1)
 
+    def test_cumple_la_especificacion_del_ejemplo(self):
+        t0 = leer_tablero([
+               '-eRD--rd', #7
+               '--------', #6
+               'H-r--E--', #5
+               '-H--r-Cr', #4
+               'R-------', #3
+               'R-H--m--', #2
+               'R-------', #1
+               'c-D---R-', #0
+               #01234567
+             ])
+        self.assertTrue(es_tablero_despues_de_activar_todas_las_trampas(t0, activar_trampas(t0)))
+        self.assertFalse(es_tablero_despues_de_activar_todas_las_trampas(t0, t0))
+
+    def test_la_pieza_con_amiga_vecina_se_queda_y_la_que_solo_tiene_enemigas_se_retira(self):
+        esperado = leer_tablero([
+              '--------', #7
+              '--------', #6
+              '--r-----', #5
+              '--r-----', #4
+              '--------', #3
+              '----r---', #2
+              '--------', #1
+              'R-------', #0
+              #01234567
+            ])
+        self.assertEqual(activar_trampas(tablero_con_trampas_ocupadas()), esperado)
+
+    def test_no_modifica_el_tablero_original(self):
+        t = tablero_con_trampas_ocupadas()
+        activar_trampas(t)
+        self.assertEqual(t, tablero_con_trampas_ocupadas())
+
+    def test_tablero_sin_piezas_en_trampas_queda_igual(self):
+        t = tablero_8x8_inicial_ejemplo()
+        self.assertEqual(activar_trampas(t), tablero_8x8_inicial_ejemplo())
+
+    def test_tablero_vacio_queda_vacio(self):
+        self.assertEqual(activar_trampas(tablero_8x8_vacio()), tablero_8x8_vacio())
+
+    def test_copiar_tablero_es_independiente_del_original(self):
+        t = tablero_con_trampas_ocupadas()
+        copia = copiarTablero(t)
+        self.assertEqual(copia, t)
+        sacarPieza(copia, Posicion(0, 0))
+        self.assertEqual(casilla_en_posicion(copia, Posicion(0, 0)), VACIA)
+        self.assertEqual(casilla_en_posicion(t, Posicion(0, 0)), Pieza(CONEJO, DORADO))
+
 #### Ejercicio 6
+
+def tablero_para_realizar():
+    return leer_tablero([
+              '--------', #7
+              '--------', #6
+              '--------', #5
+              '---r----', #4
+              '---Ec---', #3
+              '--------', #2
+              '--------', #1
+              '--------', #0
+              #01234567
+            ])
 
 class test_realizar_movimiento(unittest.TestCase):
  
@@ -684,23 +789,146 @@ class test_realizar_movimiento(unittest.TestCase):
         self.assertTrue(puede_realizar_movimiento(j0, mN))
         self.assertEqual(realizar_movimiento(j0, mN), jN)
 
-#### Ejercicio 7
-
-class test_ganador_del_juego(unittest.TestCase):
-
-    def test_promueve_conejo_dorado_turno_del_oponente(self):
-        t = leer_tablero([
-              'rr----Rr', #7
-              'c-----me', #6
-              '---Ed-R-', #5
-              '-M---R--', #4
-              '---R----', #3
-              '-rrrr---', #2
-              '-H---DCC', #1
-              'R-----RR', #0
+    def test_mover_a_secas_suma_un_paso(self):
+        j = Juego(tablero_para_realizar(), DORADO, 0)
+        m = Movimiento(MOVER_A_SECAS, Posicion(3, 3), [OESTE])
+        esperado = leer_tablero([
+              '--------', #7
+              '--------', #6
+              '--------', #5
+              '---r----', #4
+              '--E-c---', #3
+              '--------', #2
+              '--------', #1
+              '--------', #0
               #01234567
             ])
-        j = Juego(t, PLATEADO, 0)
-        self.assertTrue(hay_ganador_determinado(j))
-        self.assertEqual(ganador_del_juego(j), DORADO)
+        self.assertEqual(realizar_movimiento(j, m), Juego(esperado, DORADO, 1))
 
+    def test_arrastrar(self):
+        j = Juego(tablero_para_realizar(), DORADO, 0)
+        m = Movimiento(ARRASTRAR, Posicion(3, 3), [SUR, SUR])
+        esperado = leer_tablero([
+              '--------', #7
+              '--------', #6
+              '--------', #5
+              '--------', #4
+              '---rc---', #3
+              '---E----', #2
+              '--------', #1
+              '--------', #0
+              #01234567
+            ])
+        self.assertEqual(realizar_movimiento(j, m), Juego(esperado, DORADO, 2))
+
+    def test_empujar_hacia_el_norte(self):
+        j = Juego(tablero_para_realizar(), DORADO, 0)
+        m = Movimiento(EMPUJAR, Posicion(3, 3), [NORTE, NORTE])
+        esperado = leer_tablero([
+              '--------', #7
+              '--------', #6
+              '---r----', #5
+              '---E----', #4
+              '----c---', #3
+              '--------', #2
+              '--------', #1
+              '--------', #0
+              #01234567
+            ])
+        self.assertEqual(realizar_movimiento(j, m), Juego(esperado, DORADO, 2))
+
+    def test_empujar_hacia_el_sur(self):
+        j = Juego(tablero_para_realizar(), DORADO, 0)
+        m = Movimiento(EMPUJAR, Posicion(3, 3), [ESTE, SUR])
+        esperado = leer_tablero([
+              '--------', #7
+              '--------', #6
+              '--------', #5
+              '---r----', #4
+              '----E---', #3
+              '----c---', #2
+              '--------', #1
+              '--------', #0
+              #01234567
+            ])
+        self.assertEqual(realizar_movimiento(j, m), Juego(esperado, DORADO, 2))
+
+    def test_el_turno_pasa_al_oponente_al_agotar_los_pasos(self):
+        j = Juego(tablero_para_realizar(), DORADO, 3)
+        m = Movimiento(MOVER_A_SECAS, Posicion(3, 3), [OESTE])
+        esperado = leer_tablero([
+              '--------', #7
+              '--------', #6
+              '--------', #5
+              '---r----', #4
+              '--E-c---', #3
+              '--------', #2
+              '--------', #1
+              '--------', #0
+              #01234567
+            ])
+        self.assertEqual(realizar_movimiento(j, m), Juego(esperado, PLATEADO, 0))
+
+    def test_el_turno_pasa_al_oponente_con_un_movimiento_de_dos_pasos(self):
+        j = Juego(tablero_para_realizar(), DORADO, 2)
+        m = Movimiento(ARRASTRAR, Posicion(3, 3), [SUR, SUR])
+        resultado = realizar_movimiento(j, m)
+        self.assertEqual(resultado.turno, PLATEADO)
+        self.assertEqual(resultado.pasos_consumidos, 0)
+
+    def test_la_pieza_que_se_mueve_a_una_trampa_sin_amigas_se_retira(self):
+        t = leer_tablero([
+              '--------', #7
+              '--------', #6
+              '--------', #5
+              '--------', #4
+              '--------', #3
+              '---E----', #2
+              '--------', #1
+              'R-------', #0
+              #01234567
+            ])
+        esperado = leer_tablero([
+              '--------', #7
+              '--------', #6
+              '--------', #5
+              '--------', #4
+              '--------', #3
+              '--------', #2
+              '--------', #1
+              'R-------', #0
+              #01234567
+            ])
+        m = Movimiento(MOVER_A_SECAS, Posicion(2, 3), [OESTE])
+        self.assertEqual(realizar_movimiento(Juego(t, DORADO, 0), m), Juego(esperado, DORADO, 1))
+
+    def test_la_pieza_empujada_a_una_trampa_sin_amigas_se_retira(self):
+        t = leer_tablero([
+              '--------', #7
+              '--------', #6
+              '--------', #5
+              '--r-----', #4
+              '--E-----', #3
+              '--------', #2
+              '--------', #1
+              'R-------', #0
+              #01234567
+            ])
+        esperado = leer_tablero([
+              '--------', #7
+              '--------', #6
+              '--------', #5
+              '--E-----', #4
+              '--------', #3
+              '--------', #2
+              '--------', #1
+              'R-------', #0
+              #01234567
+            ])
+        m = Movimiento(EMPUJAR, Posicion(3, 2), [NORTE, NORTE])
+        self.assertEqual(realizar_movimiento(Juego(t, DORADO, 0), m), Juego(esperado, DORADO, 2))
+
+    def test_no_modifica_el_juego_original(self):
+        j = Juego(tablero_para_realizar(), DORADO, 0)
+        realizar_movimiento(j, Movimiento(EMPUJAR, Posicion(3, 3), [NORTE, NORTE]))
+        self.assertEqual(j, Juego(tablero_para_realizar(), DORADO, 0))
