@@ -27,12 +27,12 @@ def tableroBienFormado(t: Tablero)->bool:
     Indica si el tablero t tiene exactamente Alto filas y cada fila tiene exactamente
     Ancho casillas.
     """
-    if len(t) != 8: #len(t) da la catidad de filas del tablero si es distinto a 8 da False
-        return False
+    res : bool = len(t) == 8 #len(t) da la catidad de filas del tablero si es distinto a 8 da False
+    i : int
     for i in range(len(t)): # Este for recore las filas del tablero mediante su indice
-        if len(t[i]) !=8: #El len(t[i]) va verificando que la fila correspondiente al indice i que viene del for tenga efectivamente 8 indices(8 columnas)
-            return False # si el tamblero no tiene 8 columnas da False
-    return True
+        if len(t[i]) != 8: #El len(t[i]) va verificando que la fila correspondiente al indice i que viene del for tenga efectivamente 8 indices(8 columnas)
+            res = False # si el tamblero no tiene 8 columnas da False
+    return res
 
 
 def tablero_bien_formado(t : Tablero) -> bool:
@@ -63,14 +63,10 @@ def movimientobienFormado(m : Movimiento) -> bool:
     Indica si el movimiento m está bien formado: su origen está dentro del tablero y
     tiene un solo paso si es mover a secas o dos pasos si es arrastrar o empujar.
     """
-
-    if posicion_en_tablero (m.origen) and m.accion== MOVER_A_SECAS and len(m.pasos)==1: #Este if verifica si la coordenada es true, si la anccion es mover a secar y la longitud de pasos es 1 da True
-        return True
-    if posicion_en_tablero (m.origen) and m.accion== EMPUJAR and len(m.pasos)==2: #Este if verifica si la coordenada es true, si la anccion es Empujar y la longitud de pasos es 2 da True
-            return True
-    if posicion_en_tablero(m.origen) and m.accion== ARRASTRAR and len(m.pasos)==2: #Este if verifica si la coordenada es true, si la anccion es Arrastrar y la longitud de pasos es 2 da True
-                return True
-    return False
+    return (posicion_en_tablero(m.origen)
+            and ((m.accion == MOVER_A_SECAS and len(m.pasos) == 1) #Este if verifica si la coordenada es true, si la anccion es mover a secar y la longitud de pasos es 1 da True
+                 or (m.accion == EMPUJAR and len(m.pasos) == 2) #Este if verifica si la coordenada es true, si la anccion es Empujar y la longitud de pasos es 2 da True
+                 or (m.accion == ARRASTRAR and len(m.pasos) == 2))) #Este if verifica si la coordenada es true, si la anccion es Arrastrar y la longitud de pasos es 2 da True
 
 def movimiento_bien_formado(m : Movimiento) -> bool:
     """
@@ -84,9 +80,7 @@ def juegoBienFormado(j: Juego) ->bool:
     Indica si el juego j está bien formado: su tablero está bien formado y los pasos
     consumidos están entre 0 y Max_pasos - 1.
     """
-    if tablero_bien_formado(j.tablero) and 0<= j.pasos_consumidos < MAX_PASOS: #si es tablero esta bien formado y los pasos consumidos estan entre 0 y menor a 4 da True
-        return True
-    return False
+    return tablero_bien_formado(j.tablero) and 0 <= j.pasos_consumidos < MAX_PASOS #si es tablero esta bien formado y los pasos consumidos estan entre 0 y menor a 4 da True
 
 
 def juego_bien_formado(j : Juego) -> bool:
@@ -103,15 +97,10 @@ def esPosicionVecinaHacia(pos:Posicion, d: Direccion, pos1: Posicion) -> bool:
     Indica si pos1 es la posición vecina a pos en la dirección d, es decir, la que está
     a una casilla de distancia en esa dirección.
     """
-    if  d==NORTE and (pos1.fila == pos.fila + 1 and pos1.columna==pos.columna): 
-        return True
-    if  d==SUR and (pos1.fila == pos.fila -1 and pos1.columna ==pos.columna):
-        return True
-    if  d==ESTE and (pos1.fila ==pos.fila and pos1.columna == pos.columna + 1):
-        return True
-    if d==OESTE and (pos1.fila == pos.fila and pos1.columna ==pos.columna -1):
-        return True
-    return False
+    return ((d == NORTE and (pos1.fila == pos.fila + 1 and pos1.columna == pos.columna))
+            or (d == SUR and (pos1.fila == pos.fila - 1 and pos1.columna == pos.columna))
+            or (d == ESTE and (pos1.fila == pos.fila and pos1.columna == pos.columna + 1))
+            or (d == OESTE and (pos1.fila == pos.fila and pos1.columna == pos.columna - 1)))
 
 
 def posicion_vecina_hacia(pos : Posicion, d : Direccion) -> Posicion:
@@ -119,14 +108,16 @@ def posicion_vecina_hacia(pos : Posicion, d : Direccion) -> Posicion:
     Devuelve la posición vecina a pos en la dirección d. La posición devuelta puede
     quedar fuera del tablero.
     """
-    if d==NORTE:
-        return Posicion(pos.fila + 1, pos.columna)
-    if d==SUR:
-        return Posicion(pos.fila - 1, pos.columna)
-    if d==ESTE:
-        return Posicion(pos.fila, pos.columna + 1)
+    res : Posicion
+    if d == NORTE:
+        res = Posicion(pos.fila + 1, pos.columna)
+    elif d == SUR:
+        res = Posicion(pos.fila - 1, pos.columna)
+    elif d == ESTE:
+        res = Posicion(pos.fila, pos.columna + 1)
     else:
-        return Posicion(pos.fila, pos.columna - 1)
+        res = Posicion(pos.fila, pos.columna - 1)
+    return res
 
 
 def casilla_en_posicion(t : Tablero, p : Posicion) -> Casilla:
@@ -140,9 +131,7 @@ def hayCasillaVacia(t:Tablero, pos:Posicion) -> bool:
     """
     Indica si la posición pos está dentro del tablero y su casilla está vacía.
     """
-    if posicionEnTablero(pos) and t[pos.fila][pos.columna]== CasillaVacia.VACIA:
-        return True
-    return False
+    return posicionEnTablero(pos) and t[pos.fila][pos.columna] == CasillaVacia.VACIA
 
 
 def hay_casilla_vacia(t : Tablero, pos : Posicion) -> bool:
@@ -155,27 +144,21 @@ def hayFiguraDeColor(t:Tablero, pos:Posicion, f: Figura, col: Color) -> bool:
     """
     Indica si en la posición pos hay una pieza de figura f y de color col.
     """
-    if posicionEnTablero(pos) and not hayCasillaVacia(t, pos) and t[pos.fila][pos.columna].figura == f  and t[pos.fila][pos.columna].color == col:
-        return True
-    return False
+    return (posicionEnTablero(pos)
+            and not hayCasillaVacia(t, pos)
+            and t[pos.fila][pos.columna].figura == f
+            and t[pos.fila][pos.columna].color == col)
 
 def hayPiezaDeColor(t:Tablero, pos:Posicion, col:Color) -> bool:
     """
     Indica si en la posición pos hay una pieza del color col, sin importar su figura.
     """
-    if hayFiguraDeColor(t,pos, ELEFANTE,col):
-        return True
-    if hayFiguraDeColor(t, pos, CAMELLO, col):
-        return True
-    if hayFiguraDeColor(t, pos, CABALLO, col):
-        return True
-    if hayFiguraDeColor(t, pos, PERRO, col):
-        return True
-    if hayFiguraDeColor (t, pos, GATO, col):
-        return True
-    if hayFiguraDeColor (t, pos, CONEJO, col):
-        return True
-    return False
+    return (hayFiguraDeColor(t, pos, ELEFANTE, col)
+            or hayFiguraDeColor(t, pos, CAMELLO, col)
+            or hayFiguraDeColor(t, pos, CABALLO, col)
+            or hayFiguraDeColor(t, pos, PERRO, col)
+            or hayFiguraDeColor(t, pos, GATO, col)
+            or hayFiguraDeColor(t, pos, CONEJO, col))
 
 
 def hay_pieza_de_color(t : Tablero, pos : Posicion, col : Color) -> bool:
@@ -231,9 +214,10 @@ def hay_pieza_enemiga_mas_debil_hacia(t : Tablero, pos : Posicion, d : Direccion
     Indica si la posición vecina a pos en la dirección d tiene una pieza del oponente
     más débil que la pieza ubicada en pos.
     """
-    mia = casilla_en_posicion(t, pos)
-    pos_enemiga = posicion_vecina_hacia(pos, d)
-    return (hay_pieza_de_color(t, pos_enemiga, oponente(mia.color)) and fuerza(mia.figura) > fuerza(casilla_en_posicion(t, pos_enemiga).figura))
+    mia : Casilla = casilla_en_posicion(t, pos)
+    pos_enemiga : Posicion = posicion_vecina_hacia(pos, d)
+    return (hay_pieza_de_color(t, pos_enemiga, oponente(mia.color))
+            and fuerza(mia.figura) > fuerza(casilla_en_posicion(t, pos_enemiga).figura))
 
 
 def hay_pieza_enemiga_mas_fuerte_vecina(t : Tablero, pos : Posicion) -> bool:
@@ -354,6 +338,8 @@ def copiarTablero(t : Tablero) -> Tablero:
     Devuelve un tablero nuevo con las mismas casillas que t, independiente de t.
     """
     copia : Tablero = []
+    fila : list[Casilla]
+    casilla : Casilla
     for fila in t:
         fila_nueva : list[Casilla] = []
         for casilla in fila:
@@ -387,6 +373,7 @@ def activarTrampas(t : Tablero) -> Tablero:
     modificar t.
     """
     res : Tablero = copiarTablero(t)
+    pos_trampa : Posicion
     for pos_trampa in POSICIONES_TRAMPA:
         activarTrampa(res, pos_trampa)
     return res
@@ -513,15 +500,27 @@ def esInicioDeTurno(j : Juego, col : Color) -> bool:
     return j.turno == col and j.pasos_consumidos == 0
 
 
+def hayConejoEnFila(j : Juego, fila : int, col : Color) -> bool:
+    """
+    Indica si hay algún conejo del color col en la fila fila del tablero de j.
+    """
+    hay_conejo : bool = False
+    columna : int
+    for columna in range(ANCHO):
+        if hayFiguraDeColor(j.tablero, Posicion(fila, columna), CONEJO, col):
+            hay_conejo = True
+    return hay_conejo
+
+
 def hayConejoEnTablero(j : Juego, col : Color) -> bool:
     """
     Indica si queda algún conejo del color col en el tablero de j.
     """
     hay_conejo : bool = False
+    fila : int
     for fila in range(ALTO):
-        for columna in range(ANCHO):
-            if hayFiguraDeColor(j.tablero, Posicion(fila, columna), CONEJO, col):
-                hay_conejo = True
+        if hayConejoEnFila(j, fila, col):
+            hay_conejo = True
     return hay_conejo
 
 
@@ -538,11 +537,10 @@ def hayConejoEnFilaInicialOponente(j : Juego, col : Color) -> bool:
     Indica si hay algún conejo del color col en la fila inicial de su oponente.
     """
     hay_conejo : bool = False
+    fila : int
     for fila in range(ALTO):
-        for columna in range(ANCHO):
-            pos : Posicion = Posicion(fila, columna)
-            if posicionEnFilaInicial(pos, oponente(col)) and hayFiguraDeColor(j.tablero, pos, CONEJO, col):
-                hay_conejo = True
+        if posicionEnFilaInicial(Posicion(fila, 0), oponente(col)) and hayConejoEnFila(j, fila, col):
+            hay_conejo = True
     return hay_conejo
 
 
