@@ -27,11 +27,11 @@ def tableroBienFormado(t: Tablero)->bool:
     Indica si el tablero t tiene exactamente Alto filas y cada fila tiene exactamente
     Ancho casillas.
     """
-    res : bool = len(t) == 8 #len(t) da la catidad de filas del tablero si es distinto a 8 da False
+    res : bool = len(t) == ALTO
     i : int
     for i in range(len(t)): # Este for recore las filas del tablero mediante su indice
-        if len(t[i]) != 8: #El len(t[i]) va verificando que la fila correspondiente al indice i que viene del for tenga efectivamente 8 indices(8 columnas)
-            res = False # si el tamblero no tiene 8 columnas da False
+        if len(t[i]) != ANCHO:
+            res = False
     return res
 
 
@@ -48,7 +48,7 @@ def posicionEnTablero(pos:Posicion)->bool:
     Indica si la posición pos está dentro del tablero, es decir, si su fila y su columna
     están entre 0 y 7.
     """
-    return 0<= pos.fila < 8 and 0<= pos.columna < 8 
+    return 0 <= pos.fila < ALTO and 0 <= pos.columna < ANCHO
 
 
 def posicion_en_tablero(pos : Posicion) -> bool:
@@ -64,9 +64,9 @@ def movimientobienFormado(m : Movimiento) -> bool:
     tiene un solo paso si es mover a secas o dos pasos si es arrastrar o empujar.
     """
     return (posicion_en_tablero(m.origen)
-            and ((m.accion == MOVER_A_SECAS and len(m.pasos) == 1) #Este if verifica si la coordenada es true, si la anccion es mover a secar y la longitud de pasos es 1 da True
-                 or (m.accion == EMPUJAR and len(m.pasos) == 2) #Este if verifica si la coordenada es true, si la anccion es Empujar y la longitud de pasos es 2 da True
-                 or (m.accion == ARRASTRAR and len(m.pasos) == 2))) #Este if verifica si la coordenada es true, si la anccion es Arrastrar y la longitud de pasos es 2 da True
+            and ((m.accion == MOVER_A_SECAS and len(m.pasos) == 1)
+                 or (m.accion == EMPUJAR and len(m.pasos) == 2)
+                 or (m.accion == ARRASTRAR and len(m.pasos) == 2)))
 
 def movimiento_bien_formado(m : Movimiento) -> bool:
     """
