@@ -239,4 +239,3 @@ def mostrar_tablero_en_pantalla(t : Tablero) -> None:
     lineas = mostrar_tablero(t)
     for linea in lineas:
         print(linea)
-
