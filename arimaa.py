@@ -610,33 +610,39 @@ def calcular_mapa_de_la_figura (j : Juego ,f : Figura ) -> dict[Posicion, bool] 
             res[Posicion(fila,col)] =  hayPiezaDeFigura(j.tablero, Posicion(fila,col), f)
     return res
 
-def hayPiezaDeFigura(t : Tablero , pos : Posicion, f: Figura) -> Bool : 
+def hayPiezaDeFigura(t : Tablero , pos : Posicion, f: Figura) -> bool : 
     return hayFiguraDeColor(t,pos,f,DORADO) or hayFiguraDeColor(t,pos,f,PLATEADO)
 
-def esJuegoConTurnoCambiado (j0 , j1 : Juego ) ->  none:
+def esJuegoConTurnoCambiado (j0 , j1 : Juego ) ->  bool:
     return (j1.tablero == j0.tablero and j1.turno == oponente(j0.turno) and j1.pasos_consumidos == 0)
 
-def juego_completamente_trabado (j : Juego ) -> Bool :
+def juego_completamente_trabado (j : Juego ) -> bool :
+    return juegoCompletamenteTrabado(j)
 
-    return res
-
-def jugadorActualPuedeMoverDesde (j : Juego, pos : Posicion) -> bool:
+def jugadorActualPuedeMoverDesde(j : Juego, pos : Posicion) -> bool:
     res : bool = False
     d1 : Direccion
     d2 : Direccion
-    
+    for d1 in DIRECCIONES:
+        if puedeRealizarMovimiento(j, Movimiento(MOVER_A_SECAS, pos, [d1])):
+            res = True
+        for d2 in DIRECCIONES:
+            if puedeRealizarMovimiento(j, Movimiento(ARRASTRAR, pos, [d1,d2])):
+                    res = True
+            if puedeRealizarMovimiento(j, Movimiento(EMPUJAR, pos, [d1,d2])):
+                    res = True
     return res
 
-def jugadorActualPuedeMover (j : Juego ) -> none : 
+def jugadorActualPuedeMover (j : Juego ) -> bool : 
     res : bool = False
     fila : int
     columna : int
-    for i in range(ALTO):
+    for fila in range(ALTO):
         for columna in range(ANCHO):
             if jugadorActualPuedeMoverDesde(j, Posicion(fila,columna)):
              res = True
     return res 
 
-def juegoCompletamenteTrabado (j : Juego ) -> none :
+def juegoCompletamenteTrabado (j : Juego ) -> bool :
     return  (not jugadorActualPuedeMover(j) and not jugadorActualPuedeMover(pasar_turno(j)))
 
